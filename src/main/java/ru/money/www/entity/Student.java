@@ -16,6 +16,9 @@ public class Student {
 
     private Integer age;
 
+    @OneToOne(mappedBy = "student")
+    private Profile profile;
+
 
     public Student(String name, Integer age) {
         this.name = name;
@@ -23,6 +26,15 @@ public class Student {
     }
 
     public Student() {
+    }
+
+
+    public Profile getProfile() {
+        return profile;
+    }
+
+    public void setProfile(Profile profile) {
+        this.profile = profile;
     }
 
     public void setId(Long id) {
