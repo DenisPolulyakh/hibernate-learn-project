@@ -4,57 +4,54 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Service;
 import ru.money.www.entity.Student;
-import java.util.*;
+
+import java.util.List;
 
 @Service
 public class StudentService {
 
     private final SessionFactory sessionFactory;
+    private final TransactionHelperService transactionHelperService;
 
-    public StudentService(SessionFactory sessionFactory) {
+    public StudentService(SessionFactory sessionFactory, TransactionHelperService transactionHelperService) {
         this.sessionFactory = sessionFactory;
+        this.transactionHelperService = transactionHelperService;
     }
 
 
     public Student save(Student student) {
-        Session session = sessionFactory.openSession();
-        session.beginTransaction();
-        session.persist(student);
-        session.getTransaction().commit();
-        session.close();
-        return student;
+        return transactionHelperService.executeInTransaction(session -> {
+            session.persist(student);
+            return student;
+        });
+
     }
 
     public void deleteStudent(Long id) {
-        Session session = sessionFactory.openSession();
-        session.beginTransaction();
-        Student student = session.find(Student.class, id);
-        session.remove(student);
-        session.getTransaction().commit();
-        session.close();
+        transactionHelperService.executeInTransaction(session -> {
+            var s = session.find(Student.class, id);
+            session.remove(s);
+        });
+
+
     }
 
     public Student getById(Long id) {
-        Session session = sessionFactory.openSession();
-        Student student = session.find(Student.class, id);
-        session.close();
-        return student;
+        try (Session session = sessionFactory.openSession()) {
+            return session.find(Student.class, id);
+        }
     }
 
     public List<Student> getAll() {
-        Session session = sessionFactory.openSession();
-        List<Student> studentList = session.createQuery("select s from Student s", Student.class).list();
-        session.close();
-        return studentList;
+        try (Session session = sessionFactory.openSession()) {
+            return session.createQuery("select s from Student s", Student.class).list();
+        }
     }
 
     public Student updateStudent(Student student) {
-        Session session = sessionFactory.openSession();
-        session.beginTransaction();
-        student = session.merge(student);
-        session.getTransaction().commit();
-        session.close();
-        return student;
-
+        return transactionHelperService.executeInTransaction(session -> {
+            session.merge(student);
+            return student;
+        });
     }
 }
